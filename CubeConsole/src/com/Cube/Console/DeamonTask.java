@@ -27,27 +27,30 @@ public class DeamonTask extends Thread{
 
 	@Override
 	public void run() {
-		synchronized(this.mutex)
-		{
-			this.mutex.notifyAll();
-				
-		}
-		
+
 		synchronized(this.mutex){
-			while(!this.taskQueue.isEmpty()){
-				ConvertTask task = taskQueue.poll();
-				String tag = task.getTag();
-				task.state = StateCode.Executing;
-				//回传转换状态
-				ActionDialect ad = convertActionDialec(task);
-				this.cellet.talk(tag, ad);
-				//开始转换
-				task.convert();
-				//回传转换状态
-				ActionDialect dialect = convertActionDialec(task);
-				this.cellet.talk(tag, dialect);
-				
+			while(spinning){
+				if(this.taskQueue.isEmpty()){
+					try {
+						this.mutex.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}else{
+					ConvertTask task = taskQueue.poll();
+					String tag = task.getTag();
+					task.state = StateCode.Executing;
+					//回传转换状态
+					ActionDialect ad = convertActionDialec(task);
+					this.cellet.talk(tag, ad);
+					//开始转换
+					task.convert();
+					//回传转换状态
+					ActionDialect dialect = convertActionDialec(task);
+					this.cellet.talk(tag, dialect);
+				}
 			}
+			
 		}
 	}
 	

@@ -13,11 +13,11 @@ import org.json.JSONObject;
 
 
 public class Dispatcher {
-	
+
 	private Cellet cellet;
 	DeamonTask threadTask = null;
 	private Object mutex = new Object();
-	boolean spinning = true;
+	boolean spinning = false;
 	private Queue<ConvertTask> taskQueue = new LinkedList<ConvertTask>();
 
 	public Dispatcher(Cellet cellet) {
@@ -31,7 +31,7 @@ public class Dispatcher {
 	
 	public void stop() {
 		synchronized(this.mutex){
-			
+			mutex.notifyAll();
 		}
 		threadTask = null;
 	}
@@ -59,9 +59,15 @@ public class Dispatcher {
 						String tag = dialect.getOwnerTag();
 						//创建任务， 入队列
 						ConvertTask task = new ConvertTask(filePath, filePrefix, tag);
+						
 						synchronized(mutex){
+							
 							taskQueue.offer(task);
 							task.state = StateCode.Queueing;
+							threadTask.spinning = true;
+				
+							mutex.notify();
+							
 						}
 						//返回任务状态
 						if (null != tag) {
@@ -73,7 +79,7 @@ public class Dispatcher {
 
 							ad.appendParam("data", value);
 							// 发送数据
-							cellet.talk(tag, dialect);
+							cellet.talk(tag, ad);
 						}
 					} catch (JSONException e) {
 						e.printStackTrace();
