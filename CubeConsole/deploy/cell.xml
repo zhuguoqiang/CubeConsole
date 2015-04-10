@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cell>
+	<nucleus>
+		<talk>
+			<port>7000</port>
+			<block>20480</block>
+			<httpd>false</httpd>
+		</talk>
+	</nucleus>
+	<cellets>
+		<cellet jar="cellet-dummy.jar">
+			<class>net.cellcloud.cellet.DummyCellet</class>
+		</cellet>
+	</cellets>
+</cell>
