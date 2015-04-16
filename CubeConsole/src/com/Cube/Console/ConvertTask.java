@@ -3,28 +3,34 @@ package com.Cube.Console;
 public class ConvertTask {
 
 	StateCode state; 
-	String filePath;
-	String filePrefix;
-	String tag;
+	String filePath = null;
+	String filePrefix = null;
+	String fileExtension = null;
+	String taskTag = null;
+	String tag = null;
 	
 	private final String UNOCONV_PDF = "unoconv -f pdf";
 	private final String PDFTOPPM_PNG = "pdftoppm -png";
 	private String result1;
 	private String result2;
 	
-	public ConvertTask(String tag){
+	public ConvertTask(String tag, String taskTag){
 		this.tag = tag;
+		this.taskTag = taskTag;
 	}
 	
-	public ConvertTask(String filePath, String tag){
+	public ConvertTask(String filePath, String tag, String taskTag){
 		this.filePath = filePath;
+		this.taskTag = taskTag;
 		this.tag = tag;
 	}
 	
-	public ConvertTask(String filePath, String filePrefix, String tag){
+	public ConvertTask(String filePath, String filePrefix, String fileExtension, String tag, String taskTag){
 			this.filePath = filePath;
 			this.filePrefix = filePrefix;
+			this.fileExtension = fileExtension;
 			this.tag = tag;
+			this.taskTag = taskTag;
 	}
 	
 	public void setStateCode(StateCode state){
@@ -41,7 +47,39 @@ public class ConvertTask {
 	
 	public String getTag(){
 		return this.tag;
-	}	
+	}
+	
+	public void setFilePath(String fileP) {
+		this.filePath = fileP;
+	}
+
+	public String getFilePath() {
+		return this.filePath;
+	}
+
+	public void setFilePrefix(String filePre) {
+		this.filePrefix = filePre;
+	}
+
+	public String getFilePrefix() {
+		return this.filePrefix;
+	}
+
+	public void setFileExtension(String fileExt) {
+		this.fileExtension = fileExt;
+	}
+
+	public String getFileExtension() {
+		return this.fileExtension;
+	}
+	
+	public void setTaskTag(String taskTag){
+		this.taskTag = taskTag;
+	}
+	
+	public String getTaskTag(){
+		return this.taskTag;
+	}
 	
 	public void convert(){
 		//unoconv -f pdf /home/lztxhost/Documents/dddd.doc
@@ -55,6 +93,10 @@ public class ConvertTask {
 		
 		if(null == this.filePrefix){
 			this.filePrefix = "Cube";
+		}
+		
+		if(null == this.fileExtension){
+			this.fileExtension = "png";
 		}
 	
 		//pdftoppm -png file.pdf  file_prefix

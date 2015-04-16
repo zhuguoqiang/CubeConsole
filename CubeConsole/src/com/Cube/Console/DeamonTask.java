@@ -50,7 +50,6 @@ public class DeamonTask extends Thread{
 					this.cellet.talk(tag, dialect);
 				}
 			}
-			
 		}
 	}
 	
@@ -61,6 +60,10 @@ public class DeamonTask extends Thread{
 		JSONObject jo = new JSONObject();
 		try {
 			jo.put("state", state);
+			jo.put("filePath", task.getFilePath());
+			jo.put("filePrefix", task.getFilePrefix());
+			jo.put("fileExtension", task.getFileExtension());
+			jo.put("taskTag", task.getTaskTag());
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}

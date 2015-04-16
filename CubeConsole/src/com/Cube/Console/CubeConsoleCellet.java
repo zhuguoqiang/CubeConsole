@@ -53,10 +53,7 @@ public class CubeConsoleCellet extends Cellet {
 	}
 
 	private void process(ActionDialect dialect) {
-		String action = dialect.getAction();
-		if (action.equals(CubeConsoleAPI.ACTION_CONVERT)) {
-			this.dispatcher.dispatch(dialect);
-		}	
+		this.dispatcher.dispatch(dialect); 	
 	}
 
 	private void process(ChunkDialect dialect) {

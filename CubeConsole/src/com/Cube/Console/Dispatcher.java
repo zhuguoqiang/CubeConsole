@@ -47,6 +47,8 @@ public class Dispatcher {
 					try {
 						String filePath = null;
 						String filePrefix = null;
+						String fileExtension = null;
+						String taskTag = null;
 						String stringData = dialect.getParamAsString("data");
 						JSONObject data = new JSONObject(stringData);
 						if(data.has("filePath")){
@@ -56,9 +58,17 @@ public class Dispatcher {
 						if(data.has("filePrefix")){
 							filePrefix = data.getString("filePrefix");
 						}
+						
+						if(data.has("fileExtension")){
+							fileExtension = data.getString("fileExtension");
+						}
+						if(data.has("taskTag")){
+							taskTag = data.getString("taskTag");
+							
+						}
 						String tag = dialect.getOwnerTag();
 						//创建任务， 入队列
-						ConvertTask task = new ConvertTask(filePath, filePrefix, tag);
+						ConvertTask task = new ConvertTask(filePath, filePrefix, fileExtension, tag, taskTag);
 						
 						synchronized(mutex){
 							
@@ -76,6 +86,57 @@ public class Dispatcher {
 
 							JSONObject value = new JSONObject();
 							value.put("state", task.state.getCode());
+							value.put("filePath", task.getFilePath());
+							value.put("filePrefix", task.getFilePrefix());
+							value.put("fileExtension", task.getFileExtension());
+							value.put("taskTag", task.getTaskTag());
+
+							ad.appendParam("data", value);
+							// 发送数据
+							cellet.talk(tag, ad);
+						}
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+		}else if (action.equals(CubeConsoleAPI.ACTION_FIND_FILE)) {
+			dialect.act(new ActionDelegate() {
+				@Override
+				public void doAction(ActionDialect dialect) {
+					try {
+						String fileExtension = null;
+						String filePrefix = null;
+						String taskTag = null;
+						String stringData = dialect.getParamAsString("data");
+						JSONObject data = new JSONObject(stringData);
+						if(data.has("fileExtension")){
+							fileExtension = data.getString("fileExtension");
+						}
+						
+						if(data.has("filePrefix")){
+							filePrefix = data.getString("filePrefix");
+						}
+						if(data.has("taskTag")){
+							taskTag = data.getString("taskTag");
+						}
+						String tag = dialect.getOwnerTag();
+						
+						//查找文件 find -name "*.png" | grep -H "MCE"
+						String cmd = "find -name '*." + fileExtension + "' | grep -H " + "'" + filePrefix + "'";
+						System.out.println(cmd);
+						String result = JavaExeLinuxCmd.execut(new String[]{"/bin/sh","-c",
+								cmd
+						},null,null).toString();
+
+						//返回任务状态
+						if (null != tag) {
+							ActionDialect ad = new ActionDialect();
+							ad.setAction(CubeConsoleAPI.ACTION_FIND_FILE_RESULT);
+
+							JSONObject value = new JSONObject();
+							value.put("result", result);
+							value.put("taskTag", taskTag);
 
 							ad.appendParam("data", value);
 							// 发送数据
