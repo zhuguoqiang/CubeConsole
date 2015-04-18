@@ -9,8 +9,10 @@ import net.cellcloud.core.Cellet;
 import net.cellcloud.talk.dialect.ActionDelegate;
 import net.cellcloud.talk.dialect.ActionDialect;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONWriter;
 
 public class Dispatcher {
 
@@ -126,7 +128,7 @@ public class Dispatcher {
 						//1 查找文件 find -name "*.png" | grep -H "MCE"
 						String cmd = "find -name '*." + task.getFileExtension()
 								+ "' | grep -H " + "'" + task.getFilePrefix() + "'";
-						System.out.println(this.getClass() + " : " + cmd);
+//						System.out.println(this.getClass() + " : " + cmd);
 						String fileNames = JavaExeLinuxCmd.execut(
 								new String[] { "/bin/sh", "-c", cmd }, null,
 								null).toString();
@@ -144,15 +146,15 @@ public class Dispatcher {
 						
 						//3 移动转换后的文件到工作目录  mv -t /opt/soft/test/test4/ log1.txt log2.txt log3.txt
 						int endIndex = filePath.lastIndexOf("/");
-						String dirPath = filePath.substring(0, endIndex);
+						String dirPath = filePath.substring(0, endIndex + 1);
 						// dirPath：  /home/lztxhost/Documents/
 						// targetPath： /workspace/CubeCloud/assets/images/name/
 						List<String> convertedFileArray = new ArrayList();
 						for (String name: fileArray){
 							String pngPath = dirPath + name;
-							convertedFileArray.add(pngPath);
+							convertedFileArray.add(targetPath + name);
 							String moveCmd = "mv -t " + targetPath +" " + pngPath;
-							System.out.println(this.getClass() + " MOVE_PNG_FILE : " + moveCmd);
+//							System.out.println(this.getClass() + " MOVE_PNG_FILE : " + moveCmd);
 							String r = JavaExeLinuxCmd.execut(
 									new String[] { "/bin/sh", "-c", moveCmd}, null,
 									null).toString();
@@ -163,9 +165,10 @@ public class Dispatcher {
 							ad.setAction(CubeConsoleAPI.ACTION_REQUEST_CONVERTED_FILE_RESULT);
 
 							JSONObject value = new JSONObject();
+							JSONArray jsonArray = new JSONArray(convertedFileArray);
 							value.put("filePath", filePath);
 							value.put("targetPath", targetPath);
-							value.put("convertedFiles", convertedFileArray);
+							value.put("convertedFiles", jsonArray);
 							value.put("taskTag", taskTag);
 
 							ad.appendParam("data", value);
