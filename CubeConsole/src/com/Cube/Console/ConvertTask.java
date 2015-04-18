@@ -1,34 +1,30 @@
 package com.Cube.Console;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ConvertTask {
 
 	StateCode state; 
 	String filePath = null;
 	String filePrefix = null;
 	String fileExtension = null;
+	String targetFilePath = null;
 	String taskTag = null;
 	String tag = null;
+	List<String> convertedFileList = null;
 	
 	private final String UNOCONV_PDF = "unoconv -f pdf";
 	private final String PDFTOPPM_PNG = "pdftoppm -png";
+	private final String FILE_EXTENSION = "png";
 	private String result1;
 	private String result2;
 	
-	public ConvertTask(String tag, String taskTag){
-		this.tag = tag;
-		this.taskTag = taskTag;
-	}
-	
-	public ConvertTask(String filePath, String tag, String taskTag){
-		this.filePath = filePath;
-		this.taskTag = taskTag;
-		this.tag = tag;
-	}
-	
-	public ConvertTask(String filePath, String filePrefix, String fileExtension, String tag, String taskTag){
+	public ConvertTask(String filePath, String targetPath, String tag, String taskTag){
 			this.filePath = filePath;
-			this.filePrefix = filePrefix;
-			this.fileExtension = fileExtension;
+			this.filePrefix = ConvertUtils.extractFileNameWithoutExtension(filePath);
+			this.fileExtension = FILE_EXTENSION;
+			this.targetFilePath = targetPath;
 			this.tag = tag;
 			this.taskTag = taskTag;
 	}
@@ -73,12 +69,27 @@ public class ConvertTask {
 		return this.fileExtension;
 	}
 	
+	public void setTargetFilePath(String targetPath) {
+		this.targetFilePath = targetPath;
+	}
+
+	public String getTargetFilePath() {
+		return this.targetFilePath;
+	}
 	public void setTaskTag(String taskTag){
 		this.taskTag = taskTag;
 	}
 	
 	public String getTaskTag(){
 		return this.taskTag;
+	}
+	
+	public void setConvertedFileList(List<String> list) {
+		this.convertedFileList = list;
+	}
+
+	public List<String> getConvertedFileList() {
+		return this.convertedFileList;
 	}
 	
 	public void convert(){
@@ -89,7 +100,7 @@ public class ConvertTask {
 		},null,null).toString();
 		
 		int index = this.filePath.lastIndexOf(".");
-		String pdfFile = this.filePath.substring(0, index+1)+"pdf";
+		String pdfFilePath = this.filePath.substring(0, index+1)+"pdf";
 		
 		if(null == this.filePrefix){
 			this.filePrefix = "Cube";
@@ -100,7 +111,7 @@ public class ConvertTask {
 		}
 	
 		//pdftoppm -png file.pdf  file_prefix
-		String cmd2 = PDFTOPPM_PNG+" "+ pdfFile + " " + this.filePrefix;
+		String cmd2 = PDFTOPPM_PNG+" "+ pdfFilePath + " " + this.filePrefix;
 		result2 = JavaExeLinuxCmd.execut(new String[]{"/bin/sh","-c",
 				cmd2
 		},null,null).toString();

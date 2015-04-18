@@ -63,6 +63,7 @@ public class DeamonTask extends Thread{
 			jo.put("filePath", task.getFilePath());
 			jo.put("filePrefix", task.getFilePrefix());
 			jo.put("fileExtension", task.getFileExtension());
+			jo.put("targetPath", task.getTargetFilePath());
 			jo.put("taskTag", task.getTaskTag());
 		} catch (JSONException e) {
 			e.printStackTrace();
