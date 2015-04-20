@@ -9,12 +9,13 @@ import net.cellcloud.talk.dialect.ActionDialect;
 import net.cellcloud.talk.dialect.ChunkDialect;
 import net.cellcloud.talk.dialect.Dialect;
 
-
 public class CubeConsoleCellet extends Cellet {
+
 	private Dispatcher dispatcher = null;
 
 	public CubeConsoleCellet() {
-		super(new CelletFeature(CubeConsoleAPI.CUBECONSOLE_IDENTIFIER, new CelletVersion(1, 0, 0)));
+		super(new CelletFeature(CubeConsoleAPI.CUBECONSOLE_IDENTIFIER,
+				new CelletVersion(1, 0, 0)));
 		this.dispatcher = new Dispatcher(this);
 	}
 
@@ -34,7 +35,7 @@ public class CubeConsoleCellet extends Cellet {
 			Dialect dialect = primitive.getDialect();
 			if (dialect instanceof ActionDialect) {
 				this.process((ActionDialect) dialect);
-			}
+			} 
 			else if (dialect instanceof ChunkDialect) {
 				this.process((ChunkDialect) dialect);
 			}
@@ -53,11 +54,11 @@ public class CubeConsoleCellet extends Cellet {
 	}
 
 	private void process(ActionDialect dialect) {
-		this.dispatcher.dispatch(dialect); 	
+		this.dispatcher.dispatch(dialect);
 	}
 
 	private void process(ChunkDialect dialect) {
-		
+
 	}
 
 }
