@@ -4,6 +4,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import net.cellcloud.core.Cellet;
+import net.cellcloud.talk.dialect.ActionDialect;
+
 public class ConvertTask {
 
 	StateCode state; 
@@ -13,6 +19,7 @@ public class ConvertTask {
 	String subPath = null;
 	String taskTag = null;
 	String tag = null;
+	Cellet cellet = null;
 	List<String> convertedFileList = null;
 	
 	private static final String rootPath = "/home/wwwroot/default/cubewhiteboard/shared/";
@@ -97,7 +104,14 @@ public class ConvertTask {
 		return this.convertedFileList;
 	}
 	
-	public void convert(){
+	public void convert(Cellet cellet){
+		
+		this.cellet = cellet;
+		
+		this.state = StateCode.Executing;
+		
+		responseTaskState(this);
+		
 		//unoconv -f pdf /home/lztxhost/Documents/dddd.doc
 		String unovonvCmd = UNOCONV_PDF+" "+this.filePath;
 		JavaExeLinuxCmd.execut(new String[]{"/bin/sh","-c",
@@ -121,7 +135,6 @@ public class ConvertTask {
 				pdftoppmCmd
 		},null,null).toString();
 		
-		this.state = StateCode.Successed;
 	}
 	
 	public List<String> moveFileToWorkspace() {
@@ -171,5 +184,26 @@ public class ConvertTask {
 		}
 		// 返回URLs
 		return convertedFileURLArray;
+	}
+	
+	private void responseTaskState(ConvertTask task) {
+		int state = task.state.getCode();
+		ActionDialect ad = new ActionDialect();
+		ad.setAction(CubeConsoleAPI.ACTION_CONVERT_STATE);
+		JSONObject jo = new JSONObject();
+		try {
+			jo.put("state", state);
+			jo.put("filePath", task.getFilePath());
+			jo.put("filePrefix", task.getFilePrefix());
+			jo.put("fileExtension", task.getFileExtension());
+			jo.put("subPath", task.getSubPath());
+			jo.put("taskTag", task.getTaskTag());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		ad.appendParam("data", jo);
+		
+		// 发送数据
+		cellet.talk(this.getTag(), ad);
 	}
 }

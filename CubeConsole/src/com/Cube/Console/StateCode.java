@@ -3,12 +3,14 @@ package com.Cube.Console;
 public enum StateCode {
 
 	Queueing(100),			//!< 排队中
-
-	Executing(200),			//!< 执行中
 	
-	Failed(300),			//!< 转换失败
+	Started(200),           //!< 开始转换
 
-	Successed(400),		    //!< 转换成功
+	Executing(300),			//!< 执行中
+	
+	Failed(400),			//!< 转换失败
+
+	Successed(500),		    //!< 转换成功
 
 	Unknown(0);				//!< 未知错误
 
@@ -32,8 +34,10 @@ public enum StateCode {
 		String str = null;
 		if (code == StateCode.Queueing.getCode()){
 			str = "Queueing";
-		}else if (code == StateCode.Executing.getCode()){
+		}else if (code == StateCode.Started.getCode()){
 			str = "Executing";
+		}else if (code == StateCode.Executing.getCode()){
+			str = "Started";
 		}else if (code == StateCode.Failed.getCode()){
 			str = "Failed";
 		}else if (code == StateCode.	Successed.getCode()){

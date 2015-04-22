@@ -38,14 +38,14 @@ public class DeamonTask extends Thread {
 				} else {
 					ConvertTask task = taskQueue.poll();
 					String tag = task.getTag();
-					task.state = StateCode.Executing;
+					task.state = StateCode.Started;
 					
 					// 回传转换状态,开始转换
 					ActionDialect ad = convertActionDialec(task);
 					this.cellet.talk(tag, ad);
 					
 					// 开始转换
-					task.convert();
+					task.convert(this.cellet);
 
 					// 将转换后的文件移动到工作目录
 					List<String> urls = task.moveFileToWorkspace();
