@@ -16,7 +16,7 @@ public class DeamonTask extends Thread {
 
 	private Queue<ConvertTask> taskQueue = null;
 	private Object mutex = null;
-
+	
 	public DeamonTask(Cellet cellet, Object mutex, Queue<ConvertTask> taskQueue) {
 		super();
 		this.cellet = cellet;
@@ -44,20 +44,58 @@ public class DeamonTask extends Thread {
 					ActionDialect ad = convertActionDialec(task);
 					this.cellet.talk(tag, ad);
 					
+					List<String> urls = null;
+					
+					String superType =  FileType.parseFileSuperType(task.getFileType());
+					if (superType.equals("image")) {
+						//移动
+					}
+					else if (superType.equals("office")) {
+						//转换，移动
+						task.unoconvOperation(this.cellet);
+						task.pdftoppmOperation(this.cellet);
+					}
+					else if (superType.equals("pdf")) {
+						//pdftoppm
+						task.pdftoppmOperation(this.cellet);
+					}
+					else if (superType.equals("audio")) {
+						//暂不处理
+					}
+					else if (superType.equals("vedio")) {
+						//暂不处理
+					}
+					else if (superType.equals("")) {
+						//暂不处理
+					}
 					// 开始转换
-					task.convert(this.cellet);
+//					task.convert(this.cellet);
 
 					// 将转换后的文件移动到工作目录
-					List<String> urls = task.moveFileToWorkspace();
+					urls = task.moveFileToWorkspace(this.cellet);
 
 					// 回传转换状态,转换结束，返回urls
-					task.state = StateCode.Successed;
+				
 					if (null != tag) {
 						ActionDialect dialect = new ActionDialect();
 						dialect.setAction(CubeConsoleAPI.ACTION_CONVERT_STATE);
 						JSONObject value = new JSONObject();
-						JSONArray jsonArray = new JSONArray(urls);
+						
+						
+						
 						try {
+							
+							String error = urls.get(0);
+							if (error.equals("404")) {
+								urls.remove(0);
+								task.state = StateCode.Failed;
+								value.put("faileCode", "404");
+							}
+							else {
+								task.state = StateCode.Successed;
+							}
+							
+							JSONArray jsonArray = new JSONArray(urls);
 							value.put("state", task.state.getCode());
 							value.put("filePath", task.getFilePath());
 							value.put("subPath", task.getSubPath());
