@@ -1,20 +1,21 @@
-package com.Cube.Console;
+package cube.console;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletFeature;
 import net.cellcloud.core.CelletVersion;
 import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.dialect.ActionDelegate;
 import net.cellcloud.talk.dialect.ActionDialect;
-import net.cellcloud.talk.dialect.ChunkDialect;
 import net.cellcloud.talk.dialect.Dialect;
 
-
 public class CubeConsoleCellet extends Cellet {
+
 	private Dispatcher dispatcher = null;
 
 	public CubeConsoleCellet() {
-		super(new CelletFeature(CubeConsoleAPI.CUBECONSOLE_IDENTIFIER, new CelletVersion(1, 0, 0)));
+		super(new CelletFeature(CubeConsoleAPI.CUBECONSOLE_IDENTIFIER,
+				new CelletVersion(1, 0, 0)));
 		this.dispatcher = new Dispatcher(this);
 	}
 
@@ -35,9 +36,6 @@ public class CubeConsoleCellet extends Cellet {
 			if (dialect instanceof ActionDialect) {
 				this.process((ActionDialect) dialect);
 			}
-			else if (dialect instanceof ChunkDialect) {
-				this.process((ChunkDialect) dialect);
-			}
 		}
 	}
 
@@ -53,14 +51,11 @@ public class CubeConsoleCellet extends Cellet {
 	}
 
 	private void process(ActionDialect dialect) {
-		String action = dialect.getAction();
-		if (action.equals(CubeConsoleAPI.ACTION_CONVERT)) {
-			this.dispatcher.dispatch(dialect);
-		}	
+		dialect.act(new ActionDelegate() {
+			@Override
+			public void doAction(ActionDialect ac) {
+				dispatcher.dispatch(ac);
+			}
+		});
 	}
-
-	private void process(ChunkDialect dialect) {
-		
-	}
-
 }
