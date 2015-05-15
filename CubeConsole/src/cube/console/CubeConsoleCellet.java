@@ -1,12 +1,12 @@
-package com.Cube.Console;
+package cube.console;
 
 import net.cellcloud.common.Logger;
 import net.cellcloud.core.Cellet;
 import net.cellcloud.core.CelletFeature;
 import net.cellcloud.core.CelletVersion;
 import net.cellcloud.talk.Primitive;
+import net.cellcloud.talk.dialect.ActionDelegate;
 import net.cellcloud.talk.dialect.ActionDialect;
-import net.cellcloud.talk.dialect.ChunkDialect;
 import net.cellcloud.talk.dialect.Dialect;
 
 public class CubeConsoleCellet extends Cellet {
@@ -35,9 +35,6 @@ public class CubeConsoleCellet extends Cellet {
 			Dialect dialect = primitive.getDialect();
 			if (dialect instanceof ActionDialect) {
 				this.process((ActionDialect) dialect);
-			} 
-			else if (dialect instanceof ChunkDialect) {
-				this.process((ChunkDialect) dialect);
 			}
 		}
 	}
@@ -54,11 +51,11 @@ public class CubeConsoleCellet extends Cellet {
 	}
 
 	private void process(ActionDialect dialect) {
-		this.dispatcher.dispatch(dialect);
+		dialect.act(new ActionDelegate() {
+			@Override
+			public void doAction(ActionDialect ac) {
+				dispatcher.dispatch(ac);
+			}
+		});
 	}
-
-	private void process(ChunkDialect dialect) {
-
-	}
-
 }

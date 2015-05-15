@@ -1,4 +1,4 @@
-package com.Cube.Console;
+package cube.console;
 
 public enum FileType {
 	JPG("jpg"), PNG("png"), BMP("bmp"), JPEG("jpeg"), GIF("gif"), IMAGE("image"),

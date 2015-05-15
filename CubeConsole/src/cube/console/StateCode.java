@@ -1,4 +1,4 @@
-package com.Cube.Console;
+package cube.console;
 
 public enum StateCode {
 

@@ -1,4 +1,11 @@
-package com.Cube.Console;
+package cube.console;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 public class ConvertUtils {
 
@@ -64,4 +71,23 @@ public class ConvertUtils {
 		return filePath.substring(lastIndex + 1, filePath.length());
 	}
 
+	/**
+	 * 提取子路径  subpath
+	 * 
+	 * @param filePath
+	 * @return 
+	 */
+	public static String extractFileSubPathFromFilePath(String filePath) {
+		
+		int endIndex = filePath.lastIndexOf("/");
+		String uploadDirPath = filePath.substring(0, endIndex + 1);
+		// uploadDirPath： /usr/local/tomcat/webapps/ROOT/local/upload/admin/
+		
+		//TODO 取subpath
+		String[] strings = uploadDirPath.split("/");
+		int i = strings.length - 1;
+		String subPath = strings[i] +"/";
+
+		return subPath;
+	}
 }

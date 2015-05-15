@@ -1,16 +1,16 @@
-17:20:11.245 [INFO]  net.cellcloud.core.Nucleus *-*-* Cell Initializing *-*-*
-17:20:11.300 [ERROR] net.cellcloud.common.NonblockingAcceptor Catched exception:  java.net.BindException: Address already in use
+11:08:11.197 [INFO]  net.cellcloud.core.Nucleus *-*-* Cell Initializing *-*-*
+11:08:11.316 [ERROR] net.cellcloud.common.NonblockingAcceptor Catched exception:  java.net.BindException: Address already in use
 	at sun.nio.ch.Net.bind0(Native Method)
 	at sun.nio.ch.Net.bind(Net.java:444)
 	at sun.nio.ch.Net.bind(Net.java:436)
 	at sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:214)
 	at sun.nio.ch.ServerSocketAdaptor.bind(ServerSocketAdaptor.java:74)
 	at sun.nio.ch.ServerSocketAdaptor.bind(ServerSocketAdaptor.java:67)
-	at net.cellcloud.common.NonblockingAcceptor.bind(NonblockingAcceptor.java:96)
-	at net.cellcloud.common.NonblockingAcceptor.bind(NonblockingAcceptor.java:76)
-	at net.cellcloud.talk.TalkService.startup(TalkService.java:208)
-	at net.cellcloud.core.Nucleus.startup(Nucleus.java:215)
-	at net.cellcloud.cell.Application.startup(Application.java:164)
-	at net.cellcloud.cell.Cell.main(Cell.java:221)
-	at com.Cube.Console.Main.main(Main.java:31)
+	at net.cellcloud.common.NonblockingAcceptor.bind(Unknown Source)
+	at net.cellcloud.common.NonblockingAcceptor.bind(Unknown Source)
+	at net.cellcloud.talk.TalkService.startup(Unknown Source)
+	at net.cellcloud.core.Nucleus.startup(Unknown Source)
+	at net.cellcloud.cell.Application.startup(Unknown Source)
+	at net.cellcloud.cell.Cell.main(Unknown Source)
+	at cube.console.Main.main(Main.java:25)
 
