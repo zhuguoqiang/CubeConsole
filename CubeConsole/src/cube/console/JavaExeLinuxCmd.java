@@ -11,6 +11,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.cellcloud.common.LogLevel;
 import net.cellcloud.common.Logger;
@@ -25,14 +28,14 @@ public class JavaExeLinuxCmd {
 	 * 在有指定环境和工作目录的独立进程中执行指定的字符串命令,命令无参数
 	 * cmd：一条指定的系统命令
 	 */
-	public static int exec(String cmd, String[] envp, File dir, JavaExeLinuxCmd.Listener listener) {
+	public static int exec(String cmd, String[] envp, File dir, JavaExeLinuxCmd.Listener listener, final AtomicInteger stop) {
 		try {
 			Process proc = Runtime.getRuntime().exec(cmd,envp,dir);
 
-			StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR", cmd);
-			StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), "OUTPUT", cmd);
+			//StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR", cmd);
+			StreamGobbler outputGobbler = new StreamGobbler(proc, "OUTPUT", cmd, stop);
 
-			errorGobbler.start();
+			//errorGobbler.start();
             outputGobbler.start();
             outputGobbler.listener = listener;
             
@@ -53,15 +56,15 @@ public class JavaExeLinuxCmd {
 	 *  在指定环境和工作目录的独立进程中执行指定的命令和变量 
 	 *  
 	 */
-	public static int exec(String[] cmdarray, String[] envp, File dir, JavaExeLinuxCmd.Listener listener) {
+	public static int exec(String[] cmdarray, String[] envp, File dir, JavaExeLinuxCmd.Listener listener, final AtomicInteger stop) {
 		try {
 			Process proc = Runtime.getRuntime().exec(cmdarray,envp,dir);
 
-			StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR", cmdarray[2]);
-			StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), "OUTPUT", cmdarray[2]);
+			//StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR", cmdarray[2]);
+			StreamGobbler outputGobbler = new StreamGobbler(proc, "OUTPUT", cmdarray[2], stop);
 			outputGobbler.listener = listener;
 
-			errorGobbler.start();
+			//errorGobbler.start();
             outputGobbler.start();
 
 			int exitVal = proc.waitFor();
@@ -79,27 +82,27 @@ public class JavaExeLinuxCmd {
 	/**
 	 * 执行shell脚本 
 	 */
-	public static int executShell(String shPath, JavaExeLinuxCmd.Listener listener){
+	public static int executShell(String shPath, JavaExeLinuxCmd.Listener listener, final AtomicInteger stop){
 		
 		String cmd = "chmod 777"+ shPath;
 		StringBuilder stringBuilder = new StringBuilder();
 					
 		if (exec(new String[] { "/bin/sh", "-c", cmd }, null, null, new JavaExeLinuxCmd.Listener(){
 			@Override
-			public void onFinish(StringBuilder buf) {
+			public void onFinish(List<String> list, final AtomicInteger stop) {
 			}
 			@Override
 			public void onError() {
 			}
-		}) == 0) {
+		}, stop) == 0) {
 			try {	
 				String cmd2 = "/bin/sh "+ shPath;
 				Process proc = Runtime.getRuntime().exec(cmd2);
 				
-				StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR", cmd);
-				StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), "OUTPUT", cmd);
+				//StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR", cmd);
+				StreamGobbler outputGobbler = new StreamGobbler(proc, "OUTPUT", cmd, stop);
 				outputGobbler.listener = listener;
-				errorGobbler.start();
+				//errorGobbler.start();
 	            outputGobbler.start();
 	            
 	            int exitVal = proc.waitFor();
@@ -116,39 +119,60 @@ public class JavaExeLinuxCmd {
 
 	public static class StreamGobbler extends Thread {
 		private InputStream is;
+		private Process process;
 		private String type;
 		private StringBuilder buf;
 		private String cmd;
 		protected Listener listener;
+		private AtomicInteger stop;
+		private List<String> list;
 
-		protected StreamGobbler(InputStream is, String type, String cmd) {
-		    this.is = is;
+		protected StreamGobbler(Process process, String type, String cmd,  final AtomicInteger stop) {
+		    //this.is = is;
+			this.process = process;
 		    this.type = type;
 		    this.cmd = cmd;
 		    this.buf = new StringBuilder();
+		    this.stop = stop;
+		    this.list =  new ArrayList() ;
 		}
 
 		public void run() {
 			try {
-				InputStreamReader isr = new InputStreamReader(is);
+				InputStreamReader isr = new InputStreamReader(this.process.getInputStream());
 				BufferedReader br = new BufferedReader(isr);
 				String line = null;
+				int count = 0;
 				while ((line = br.readLine()) != null) {
-					this.buf.append(line);
+					list.add(line.toString());
 					Logger.i(this.getClass(), " Command : {" + cmd + "}" + type + " >>> " + line);
+					
+					try {
+						Thread.sleep(10);
+						count++;
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					if (count > 10000)
+						break;
 				}
+				
+				process.destroy();
+				
 			} catch (IOException ioe) {
 				Logger.log(StreamGobbler.class, ioe, LogLevel.ERROR);
 			}
 
 			if (null != this.listener) {
-				this.listener.onFinish(this.buf);
+				this.stop.incrementAndGet();
+				this.listener.onFinish(list, this.stop);
 			}
 		}
 	}
 
 	public interface Listener {
-		public void onFinish(StringBuilder buf);
+		public void onFinish(List<String> list, final AtomicInteger stop);
 		public void onError();
 	}
 }
