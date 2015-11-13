@@ -5,20 +5,17 @@
 		<talk>
 			<port>7000</port>
 			<block>20480</block>
-			<connections>5000</connections>
+			<connections>1000</connections>
 			<http>
 				<enabled>true</enabled>
 				<port>7070</port>
-				<queue>5000</queue>
+				<queue>1000</queue>
 			</http>
 		</talk>
 	</nucleus>
 	<cellets>
-		<cellet jar="cube-dispatcher.jar">
-			<class>cube.signaling.SignalingCellet</class>
-			<class>cube.messaging.MessagingCellet</class>
-			<class>cube.whiteboard.WhiteboardCellet</class>
-			<class>cube.master.MasterCellet</class>
+		<cellet jar="cellet-dummy.jar">
+			<class>net.cellcloud.cellet.DummyCellet</class>
 		</cellet>
 	</cellets>
 </cell>

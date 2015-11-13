@@ -25,14 +25,10 @@ public class ConvertTask extends BaseTask {
 	String taskTag = null;
 	String tag = null;
 	Cellet cellet = null;
-	List<String> convertedFileList = null;
+	final List<String> convertedFileList = new ArrayList<String>();
 	String tmpConvertDirPath = null;
-
-	private static final String rootPath = "/home/lztxhost/apache-tomcat-7.0.61/webapps/ROOT/cubewhiteboard/shared/";
-	private static final String URL = "http:211.103.217.154/cubewhiteboard/shared/";
-//	private static final String convertWorkDirPath = "/home/lztxhost/Documents/CubeConsole/";
-//	private static final String convertWorkDirPath = "/home/ambrose/Documents/cubeconsole/";
-	private static final String convertWorkDirPath = "/data/cubeconsole/";
+	private String convertWorkDirPath = null;
+	
 	private final String UNOCONV_PDF = "unoconv -f pdf";
 	private final String PDFTOPPM_PNG = "pdftoppm -png";
 	private final String CP = "cp -f ";
@@ -50,11 +46,9 @@ public class ConvertTask extends BaseTask {
 		this.subPath = ConvertUtils.extractFileSubPathFromFilePath(filePath);
 		this.tag = tag;
 		this.taskTag = taskTag;
-		this.convertedFileList = new ArrayList<String>();
-	}
-
-	public static String getRootPath() {
-		return rootPath;
+		//this.convertedFileList = 
+		// 当前路径
+		this.convertWorkDirPath = System.getProperty("user.dir");
 	}
 
 	public void setStateCode(StateCode state) {
@@ -125,9 +119,9 @@ public class ConvertTask extends BaseTask {
 		return this.taskTag;
 	}
 
-	public void setConvertedFileList(List<String> list) {
+	/** public void setConvertedFileList(List<String> list) {
 		this.convertedFileList = list;
-	}
+	}*/
 
 	public List<String> getConvertedFileList() {
 		return this.convertedFileList;
@@ -139,7 +133,8 @@ public class ConvertTask extends BaseTask {
 		// 回传转换状态,开始转换
 		ActionDialect ad = convertActionDialec();
 		this.cellet.talk(tag, ad);
-
+		
+		this.convertedFileList.clear();
 		String superType =  FileType.parseFileSuperType(this.getFileType());
 		if (superType.equals("image")) {
 			(new Thread() {
@@ -147,42 +142,54 @@ public class ConvertTask extends BaseTask {
 				public void run() {
 					List<String> uris = null;
 					if (copyImageFileToConvertDir()) {
-						
 						uris = moveFileToWorkspace();
 					}
 					else {
 						state = StateCode.Failed;
 					}
-//					// TODO
-//					if (null != tag) {
-//						ActionDialect dialect = new ActionDialect();
-//						dialect.setAction(CubeConsoleAPI.ACTION_CONVERT_STATE);
-//						JSONObject value = new JSONObject();
-//
-//						try {	
-//							if (state != StateCode.Failed) {
-//								String error = uris.get(0);
-//								if (error.equals("404")) {
-//									uris.remove(0);
-//									state = StateCode.Failed;
-//									value.put("faileCode", "404");
-//								}
-//								else {
-//									state = StateCode.Successed;
-//								}
-//							}
-//							JSONArray jsonArray = new JSONArray(uris);
-//							value.put("state", state.getCode());
-//							value.put("filePath", getFilePath());
-//							value.put("convertedFileUris", jsonArray);
-//							value.put("taskTag", getTaskTag());
-//						} catch (JSONException e) {
-//							e.printStackTrace();
-//						}
-//						dialect.appendParam("data", value);
-//						// 发送数据
-//						cellet.talk(tag, dialect);
-//					}
+					
+					// TODO
+					if (null != tag) {
+						ActionDialect dialect = new ActionDialect();
+						dialect.setAction(CubeConsoleAPI.ACTION_CONVERT_STATE);
+						JSONObject value = new JSONObject();
+
+						try {	
+
+							//state
+							String error = null;
+							if (state != StateCode.Failed) {
+								//uri
+								if (null != uris && !uris.isEmpty())
+								{
+									error = uris.get(0);
+									Logger.d(getClass(), "image uri not empty, and uri(0) = " + error);
+									if (error.equals("404")) {
+										uris.clear();
+										state = StateCode.Failed;
+									}
+									else {
+										state = StateCode.Successed;
+										JSONArray jsonArray = new JSONArray(uris);
+										value.put("convertedFileUris", jsonArray);
+									}
+								}else
+								{	
+									state = StateCode.Failed;
+									Logger.d(getClass(), "image uri is empty!!");
+								}
+							}
+							value.put("state", state.getCode());
+							value.put("filePath", getFilePath());
+							value.put("outPath", getOutPutPath());
+							value.put("taskTag", getTaskTag());
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+						dialect.appendParam("data", value);
+						// 发送数据
+						cellet.talk(tag, dialect);
+					}
 				}
 			}).start();
 		}
@@ -195,12 +202,10 @@ public class ConvertTask extends BaseTask {
 					if (unoconvOperation()) {
 						if (pdftoppmOperation()) {
 							uris = moveFileToWorkspace();
-						}
-						else {
+						} else {
 							state = StateCode.Failed;
 						}
-					}
-					else {
+					} else {
 						state = StateCode.Failed;
 					}
 					
@@ -210,40 +215,39 @@ public class ConvertTask extends BaseTask {
 						JSONObject value = new JSONObject();
 
 						try {	
+							//state
 							String error = null;
-							if (null != uris && !uris.isEmpty())
-							{
-								Logger.d(getClass(), "uri not empty!!");
-								error = uris.get(0);
-								if (state != StateCode.Failed) {
+							if (state != StateCode.Failed) {
+								//uri
+								if (null != uris && !uris.isEmpty())
+								{
+									error = uris.get(0);
+									Logger.d(getClass(), "office uri not empty, and uri(0) = " + error);
 									if (error.equals("404")) {
-										Logger.d(getClass(), "+++++state failed");
 										uris.clear();
 										state = StateCode.Failed;
-										value.put("faileCode", "404");
 									}
 									else {
 										state = StateCode.Successed;
-										Logger.d(getClass(), "state sussed");
+										JSONArray jsonArray = new JSONArray(uris);
+										value.put("convertedFileUris", jsonArray);
 									}
 								}else
-								{
-									Logger.d(getClass(), "state "+ state);
+								{	
+									state = StateCode.Failed;
+									Logger.d(getClass(), "office uri is empty!!");
 								}
-							}else
-							{	
-								Logger.d(getClass(), "uri is empty!!");
 							}
-							JSONArray jsonArray = new JSONArray(uris);
+
 							value.put("state", state.getCode());
 							value.put("filePath", getFilePath());
 							value.put("outPath", getOutPutPath());
-							value.put("convertedFileUris", jsonArray);
 							value.put("taskTag", getTaskTag());
 							
 						} catch (JSONException e) {
 							e.printStackTrace();
 						}
+						Logger.d(getClass(), "office dialect value = " + value.toString());
 						dialect.appendParam("data", value);
 						// 发送数据
 						cellet.talk(tag, dialect);
@@ -270,27 +274,37 @@ public class ConvertTask extends BaseTask {
 						JSONObject value = new JSONObject();
 
 						try {	
+							//state
+							String error = null;
 							if (state != StateCode.Failed) {
-								String error = uris.get(0);
-								if (error.equals("404")) {
-									uris.remove(0);
+								//uri
+								if (null != uris && !uris.isEmpty())
+								{
+									error = uris.get(0);
+									Logger.d(getClass(), "pdf uri not empty, and uri(0) = " + error);
+									if (error.equals("404")) {
+										uris.clear();
+										state = StateCode.Failed;
+									}
+									else {
+										state = StateCode.Successed;
+										JSONArray jsonArray = new JSONArray(uris);
+										value.put("convertedFileUris", jsonArray);
+									}
+								}else
+								{	
 									state = StateCode.Failed;
-									value.put("faileCode", "404");
-								}
-								else {
-									state = StateCode.Successed;
+									Logger.d(getClass(), "pdf uri is empty!!");
 								}
 							}
-							
-							JSONArray jsonArray = new JSONArray(uris);
 							value.put("state", state.getCode());
 							value.put("filePath", getFilePath());
 							value.put("outPath", getOutPutPath());
-							value.put("convertedFileUris", jsonArray);
 							value.put("taskTag", getTaskTag());
 						} catch (JSONException e) {
 							e.printStackTrace();
 						}
+						Logger.d(getClass(), "pdf dialect value = " + value.toString());
 						dialect.appendParam("data", value);
 						// 发送数据
 						cellet.talk(tag, dialect);
@@ -307,41 +321,6 @@ public class ConvertTask extends BaseTask {
 		else if (superType.equals("")) {
 			//暂不处理
 		}
-		// 开始转换
-//		task.convert(this.cellet);
-
-		// 回传转换状态,转换结束，返回uris
-
-		/*
-		 if (null != tag) {
-			ActionDialect dialect = new ActionDialect();
-			dialect.setAction(CubeConsoleAPI.ACTION_CONVERT_STATE);
-			JSONObject value = new JSONObject();
-
-			try {	
-				String error = uris.get(0);
-				if (error.equals("404")) {
-					uris.remove(0);
-					this.state = StateCode.Failed;
-					value.put("faileCode", "404");
-				}
-				else {
-					this.state = StateCode.Successed;
-				}
-				
-				JSONArray jsonArray = new JSONArray(uris);
-				value.put("state", this.state.getCode());
-				value.put("filePath", this.getFilePath());
-				value.put("convertedFileUris", jsonArray);
-				value.put("taskTag", this.getTaskTag());
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-			dialect.appendParam("data", value);
-			// 发送数据
-			cellet.talk(tag, dialect);
-		}
-		*/
 	}
 
 	// unoconv -f pdf /home/lztxhost/apache-tomcat-7.0.61/webapps/ROOT/local/upload/admin/dddd.doc
@@ -487,7 +466,8 @@ public class ConvertTask extends BaseTask {
 						
 						if (null != list && !list.isEmpty()) {
 							for (String name : list) {
-								if (name.contains("mv: missing")){
+								
+								if (name.contains("mv: ") || name.contains("find: ")){
 									convertedFileList.clear();
 									convertedFileList.add(error);
 									break;
@@ -511,7 +491,7 @@ public class ConvertTask extends BaseTask {
 								if (state != StateCode.Failed) {
 									String er = convertedFileList.get(0);
 									if (er.equals("404")) {
-										convertedFileList.remove(0);
+										convertedFileList.clear();
 										state = StateCode.Failed;
 										value.put("faileCode", "404");
 									}
