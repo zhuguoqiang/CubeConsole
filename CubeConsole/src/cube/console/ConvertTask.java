@@ -480,39 +480,6 @@ public class ConvertTask extends BaseTask {
 						} else {
 							convertedFileList.add(error);
 						}
-
-						// TODO
-						if (null != tag) {
-							ActionDialect dialect = new ActionDialect();
-							dialect.setAction(CubeConsoleAPI.ACTION_CONVERT_STATE);
-							JSONObject value = new JSONObject();
-
-							try {	
-								if (state != StateCode.Failed) {
-									String er = convertedFileList.get(0);
-									if (er.equals("404")) {
-										convertedFileList.clear();
-										state = StateCode.Failed;
-										value.put("faileCode", "404");
-									}
-									else {
-										state = StateCode.Successed;
-									}
-								}
-								JSONArray jsonArray = new JSONArray(convertedFileList);
-								value.put("state", state.getCode());
-								value.put("filePath", getFilePath());
-								value.put("outPath", getOutPutPath());
-								value.put("convertedFileUris", jsonArray);
-								value.put("taskTag", getTaskTag());
-							} catch (JSONException e) {
-								e.printStackTrace();
-							}
-							dialect.appendParam("data", value);
-							// 发送数据
-							cellet.talk(tag, dialect);
-						}
-						
 					}
 					
 					@Override
