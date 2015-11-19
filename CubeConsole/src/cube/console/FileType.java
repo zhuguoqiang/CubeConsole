@@ -5,7 +5,7 @@ public enum FileType {
 
 	DOC("doc"), DOCX("docx"), PPT("ppt"), PPTX("pptx"), OFFICE("office"),
 
-	PDF("pdf"),
+	PDF("pdf"),	XLS("xls"),XLSX("xlsx"),
 
 	OGG("ogg"), MP3("mp3"), WAV("wav"), AUDIO("audio"), MP4("mp4"), VEDIO(
 			"vedio"),
@@ -43,6 +43,7 @@ public enum FileType {
 		}
 		else if (extension.equals("doc") || extension.equals("docx")
 				|| extension.equals("ppt") || extension.equals("pptx")
+				|| extension.equals("xls") || extension.equals("xlsx")
 				) {
 			return OFFICE.extension;
 		}else if (extension.equals("pdf")) {

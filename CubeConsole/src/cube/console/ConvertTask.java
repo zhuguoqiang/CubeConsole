@@ -30,6 +30,7 @@ public class ConvertTask extends BaseTask {
 	private String convertWorkDirPath = null;
 	
 	private final String UNOCONV_PDF = "unoconv -f pdf";
+	private final String SOFFICE_PDF = "soffice --headless --convert-to pdf";
 	private final String PDFTOPPM_PNG = "pdftoppm -png";
 	private final String CP = "cp -f ";
 	private final String FILE_EXTENSION = "png";
@@ -199,7 +200,7 @@ public class ConvertTask extends BaseTask {
 				@Override
 				public void run() {
 					List<String> uris = null;
-					if (unoconvOperation()) {
+					if (sofficeOperation()) {
 						if (pdftoppmOperation()) {
 							uris = moveFileToWorkspace();
 						} else {
@@ -324,14 +325,15 @@ public class ConvertTask extends BaseTask {
 	}
 
 	// unoconv -f pdf /home/lztxhost/apache-tomcat-7.0.61/webapps/ROOT/local/upload/admin/dddd.doc
-	public boolean unoconvOperation() {
+//	soffice --headless --convert-to pdf /data/dddd.doc
+	public boolean sofficeOperation() {
 		this.state = StateCode.Executing;
 		responseTaskState(this);
 
 		final AtomicInteger stop = new AtomicInteger(0);
-		String unoconvCmd = UNOCONV_PDF + " " + this.filePath;
+		String sofficeCmd = SOFFICE_PDF + " " + this.filePath;
 		int exitVal = JavaExeLinuxCmd.exec(
-				new String[] { "/bin/sh", "-c", unoconvCmd }, null, null, new JavaExeLinuxCmd.Listener() {
+				new String[] { "/bin/sh", "-c", sofficeCmd }, null, null, new JavaExeLinuxCmd.Listener() {
 					@Override
 					public void onFinish(List<String> list, final AtomicInteger stop) {
 					}
@@ -362,7 +364,7 @@ public class ConvertTask extends BaseTask {
 				return false;
 			}
 		}
-		String tmpFilePath = convertWorkDirPath + ConvertUtils.extractFileName(pdfFilePath);
+		String tmpFilePath = convertWorkDirPath +"/"+ ConvertUtils.extractFileName(pdfFilePath);
 		final AtomicInteger stop = new AtomicInteger(0);
 		String cpCmd = CP + pdfFilePath + " " + tmpFilePath;
 		int exitVal = JavaExeLinuxCmd.exec(
@@ -407,7 +409,7 @@ public class ConvertTask extends BaseTask {
 				Logger.d(getClass(), "mkdirs " + convertWorkDirPath + "failed");
 			}
 		}
-		String tmpFilePath = convertWorkDirPath + ConvertUtils.extractFileName(this.filePath);
+		String tmpFilePath = convertWorkDirPath + "/" + ConvertUtils.extractFileName(this.filePath);
 		//图片不经过转换， 后缀名不一定是png
 		this.setFileExtension(ConvertUtils.extractFileExtensionFromFilePath(filePath));
 		final String cpCmd = CP + this.filePath + " " + tmpFilePath;
