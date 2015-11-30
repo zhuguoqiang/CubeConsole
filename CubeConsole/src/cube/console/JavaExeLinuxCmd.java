@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -91,9 +90,6 @@ public class JavaExeLinuxCmd {
 			@Override
 			public void onFinish(List<String> list, final AtomicInteger stop) {
 			}
-			@Override
-			public void onError() {
-			}
 		}, stop) == 0) {
 			try {	
 				String cmd2 = "/bin/sh "+ shPath;
@@ -118,6 +114,11 @@ public class JavaExeLinuxCmd {
 	}
 
 	public static class StreamGobbler extends Thread {
+		
+		private final String CMD_END = "CMD_END";
+		private final int CMD_ERROR = 404;
+		private final int CMD_SUCCESSED = 200;
+		
 		private InputStream is;
 		private Process process;
 		private String type;
@@ -131,21 +132,37 @@ public class JavaExeLinuxCmd {
 		    //this.is = is;
 			this.process = process;
 		    this.type = type;
-		    this.cmd = cmd;
+		    this.cmd = cmd + " && echo " + CMD_END;
 		    this.buf = new StringBuilder();
 		    this.stop = stop;
 		    this.list =  new ArrayList() ;
 		}
 
 		public void run() {
+			boolean error =  false;
 			try {
 				InputStreamReader isr = new InputStreamReader(this.process.getInputStream());
 				BufferedReader br = new BufferedReader(isr);
 				String line = null;
 				int count = 0;
+				
 				while ((line = br.readLine()) != null) {
+					Logger.i(this.getClass(), " Command : {" + cmd + "} " + type + " >>> " + line.toString());
+					if (line.toString().equals(CMD_END)) {
+						break;
+					}
+					
+					if (line.toString().contains("soffice:")
+							||line.toString().contains("pdftoppm:")
+							||line.toString().contains("find:")
+							||line.toString().contains("mv:")
+							|| line.toString().contains("-bash:")) {
+						list.clear();
+						error = true;
+						break;
+					}
+
 					list.add(line.toString());
-					Logger.i(this.getClass(), " Command : {" + cmd + "}" + type + " >>> " + line);
 					
 					try {
 						Thread.sleep(10);
@@ -154,7 +171,7 @@ public class JavaExeLinuxCmd {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					if (count > 10000)
+					if (count > 6000)
 						break;
 				}
 				
@@ -165,7 +182,12 @@ public class JavaExeLinuxCmd {
 			}
 
 			if (null != this.listener) {
-				this.stop.incrementAndGet();
+				if (error) {
+					this.stop.set(CMD_ERROR);
+				}else
+				{
+					this.stop.set(CMD_SUCCESSED);
+				}	
 				this.listener.onFinish(list, this.stop);
 			}
 		}
@@ -173,6 +195,5 @@ public class JavaExeLinuxCmd {
 
 	public interface Listener {
 		public void onFinish(List<String> list, final AtomicInteger stop);
-		public void onError();
 	}
 }

@@ -15,19 +15,33 @@ import org.json.JSONObject;
 
 public class ConvertTask extends BaseTask {
 
+	/*转换状态*/
 	StateCode state;
-	String filePath = null;
-	String outPutPath = null;
+	/*文件路径*/
+	// /data/tomcat/webapps/ROOT/cubewhiteboard/shared/13245/xxxx.doc
+	String filePath = null; 
+	/*转换输出路径*/
+	///data/tomcat/webapps/ROOT/cubewhiteboard/shared
+	String outPutPath = null; 
+	/*文件前缀*/
 	String filePrefix = null;
+	/*文件后缀*/
 	String fileExtension = null;
+	/*文件类型*/
 	FileType fileType;
+	/*文件子路径*/
 	String subPath = null;
+	/*转换任务标示*/
 	String taskTag = null;
+	/*cellet tag*/
 	String tag = null;
+	/*cellet*/
 	Cellet cellet = null;
 	final List<String> convertedFileList = new ArrayList<String>();
-	String tmpConvertDirPath = null;
-	private String convertWorkDirPath = null;
+	
+	/*转换工具工作路径*/
+	// /data/cubeconsole
+	private String convertWorkPath = null;
 	
 	private final String UNOCONV_PDF = "unoconv -f pdf";
 	private final String SOFFICE_PDF = "soffice --headless --convert-to pdf";
@@ -47,9 +61,7 @@ public class ConvertTask extends BaseTask {
 		this.subPath = ConvertUtils.extractFileSubPathFromFilePath(filePath);
 		this.tag = tag;
 		this.taskTag = taskTag;
-		//this.convertedFileList = 
-		// 当前路径
-		this.convertWorkDirPath = System.getProperty("user.dir");
+		this.convertWorkPath = System.getProperty("user.dir");
 	}
 
 	public void setStateCode(StateCode state) {
@@ -201,7 +213,8 @@ public class ConvertTask extends BaseTask {
 				public void run() {
 					List<String> uris = null;
 					if (sofficeOperation()) {
-						if (pdftoppmOperation()) {
+						String pdfFilePath = convertWorkPath + "/" + filePrefix + ".pdf";
+						if (pdftoppmOperation(pdfFilePath)) {
 							uris = moveFileToWorkspace();
 						} else {
 							state = StateCode.Failed;
@@ -263,7 +276,7 @@ public class ConvertTask extends BaseTask {
 				@Override
 				public void run() {
 					List<String> uris = null;
-					if (pdftoppmOperation()) {
+					if (pdftoppmOperation(filePath)) {
 						uris = moveFileToWorkspace();
 					}
 					else {
@@ -324,8 +337,7 @@ public class ConvertTask extends BaseTask {
 		}
 	}
 
-	// unoconv -f pdf /home/lztxhost/apache-tomcat-7.0.61/webapps/ROOT/local/upload/admin/dddd.doc
-//	soffice --headless --convert-to pdf /data/dddd.doc
+    //	soffice --headless --convert-to pdf /data/dddd.doc
 	public boolean sofficeOperation() {
 		this.state = StateCode.Executing;
 		responseTaskState(this);
@@ -337,79 +349,89 @@ public class ConvertTask extends BaseTask {
 					@Override
 					public void onFinish(List<String> list, final AtomicInteger stop) {
 					}
-					@Override
-					public void onError() {
-					}
 				}, stop);
-		return  0 == exitVal; 
-	}
+		
+		int total = 0;
 
-	// pdftoppm -png file.pdf file_prefix
-	public boolean pdftoppmOperation() {
-		this.state = StateCode.Executing;
-		responseTaskState(this);
-
-		int index = this.filePath.lastIndexOf(".");
-		String pdfFilePath = this.filePath.substring(0, index + 1) + "pdf";
-
-		// 1.cp /home/lztxhost/apache-tomcat-7.0.61/webapps/ROOT/local/upload/admin/dddd.pdf
-		// /home/lztxhost/Documents/CubeConsole/dddd.pdf
-
-		File tmpFile = new File(convertWorkDirPath);
-		if (!tmpFile.exists()) {
-			if (tmpFile.mkdirs()) {
-				Logger.d(getClass(), "mkdirs " + convertWorkDirPath + "succused");
-			} else {
-				Logger.d(getClass(), "mkdirs " + convertWorkDirPath + "failed");
-				return false;
+		while (stop.get() != 200 && stop.get() != 404) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
+			total++;
+			
+			if (total > 6000)
+				break;
 		}
-		String tmpFilePath = convertWorkDirPath +"/"+ ConvertUtils.extractFileName(pdfFilePath);
-		final AtomicInteger stop = new AtomicInteger(0);
-		String cpCmd = CP + pdfFilePath + " " + tmpFilePath;
-		int exitVal = JavaExeLinuxCmd.exec(
-				new String[] { "/bin/sh", "-c", cpCmd }, null, null,  new JavaExeLinuxCmd.Listener(){
-					@Override
-					public void onFinish(List<String> list,final AtomicInteger stop) {
-					}
-					@Override
-					public void onError() {
-					}
-				}, stop);
-		if (exitVal == 0) {
-			//2.pdftoppm -png /home/lztxhost/Documents/CubeConsole/dddd.pdf file_prefix
-
-			String pdftoppmCmd = PDFTOPPM_PNG + " " + tmpFilePath + " "
-					+ this.filePrefix;
-			int pdftoppmExitVal = JavaExeLinuxCmd.exec(
-					new String[] { "/bin/sh", "-c", pdftoppmCmd }, null, null,  new JavaExeLinuxCmd.Listener(){
-						@Override
-						public void onFinish(List<String> list, final AtomicInteger stop) {
-						}
-						@Override
-						public void onError() {
-						}
-					}, stop);
-			return pdftoppmExitVal == 0;
-		}
-		else {
+		
+		if (stop.get() == 404) {
+			return false;
+		} else if (stop.get() == 200) {
+			return true;
+		}else
+		{
 			return false;
 		}
 	}
+	
+
+	// pdftoppm -png file.pdf file_prefix
+	public boolean pdftoppmOperation(String pdfFilePath) {
+		this.state = StateCode.Executing;
+		responseTaskState(this);
+
+		//2.pdftoppm -png /home/lztxhost/Documents/CubeConsole/dddd.pdf file_prefix
+		final AtomicInteger stop = new AtomicInteger(0);
+		String pdftoppmCmd = PDFTOPPM_PNG + " " + pdfFilePath + " "
+				+ this.filePrefix;
+		int pdftoppmExitVal = JavaExeLinuxCmd.exec(
+				new String[] { "/bin/sh", "-c", pdftoppmCmd }, null, null,  new JavaExeLinuxCmd.Listener(){
+					@Override
+					public void onFinish(List<String> list, final AtomicInteger stop) {
+					}
+				}, stop);
+		
+		int total = 0;
+
+		while (stop.get() != 200 && stop.get() != 404) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			total++;
+			
+			if (total > 6000)
+				break;
+		}
+		
+		if (stop.get() == 404) {
+			return false;
+		} else if (stop.get() == 200) {
+			return true;
+		} else
+		{
+			return false;
+		}
+	}
+
 	
 	public boolean copyImageFileToConvertDir() {
 		// 1.cp /home/lztxhost/apache-tomcat-7.0.61/webapps/ROOT/local/upload/admin/dddd.png
 		// /home/lztxhost/Documents/CubeConsole/dddd.png
 		this.state = StateCode.Executing;
-		File tmpFile = new File(convertWorkDirPath);
+		File tmpFile = new File(convertWorkPath);
 		if (!tmpFile.exists()) {
 			if (tmpFile.mkdirs()) {
-				Logger.d(getClass(), "mkdirs " + convertWorkDirPath + "succused");
+				Logger.d(getClass(), "mkdirs " + convertWorkPath + "succused");
 			} else {
-				Logger.d(getClass(), "mkdirs " + convertWorkDirPath + "failed");
+				Logger.d(getClass(), "mkdirs " + convertWorkPath + "failed");
 			}
 		}
-		String tmpFilePath = convertWorkDirPath + "/" + ConvertUtils.extractFileName(this.filePath);
+		String tmpFilePath = convertWorkPath + "/" + ConvertUtils.extractFileName(this.filePath);
 		//图片不经过转换， 后缀名不一定是png
 		this.setFileExtension(ConvertUtils.extractFileExtensionFromFilePath(filePath));
 		final String cpCmd = CP + this.filePath + " " + tmpFilePath;
@@ -418,9 +440,11 @@ public class ConvertTask extends BaseTask {
 				new String[] { "/bin/sh", "-c", cpCmd }, null, null,  new JavaExeLinuxCmd.Listener(){
 					@Override
 					public void onFinish(List<String> list, final AtomicInteger stop) {
-					}
-					@Override
-					public void onError() {
+						if (stop.get() == 404) {
+							//error
+						} else if (stop.get() == 200) {
+							//success
+						}
 					}
 				}, stop);
 		return exitVal == 0;
@@ -429,7 +453,7 @@ public class ConvertTask extends BaseTask {
 	public List<String> moveFileToWorkspace() {
 		this.state = StateCode.Executing;
 		responseTaskState(this);
-		
+
 		// 1 查找文件
 		// find -name "*.png" | grep -H "MCE"
 //		 find -name '*.png' | grep 'jgkafrlBfVuGCfIAeNbcNSaRTuYKVdag' | awk -F"./" '{print $2}' && mv -i $(find -name '*.png' | grep 'jgkafrlBfVuGCfIAeNbcNSaRTuYKVdag' | awk -F"./" '{print $2}') /home/cubehost/backupFile/
@@ -464,54 +488,39 @@ public class ConvertTask extends BaseTask {
 				new JavaExeLinuxCmd.Listener() {
 					@Override
 					public void onFinish(List<String> list, final AtomicInteger  stop) {
-						String error = "404";
-						
-						if (null != list && !list.isEmpty()) {
-							for (String name : list) {
-								
-								if (name.contains("mv: ") || name.contains("find: ")){
-									convertedFileList.clear();
-									convertedFileList.add(error);
-									break;
-								}else{
+						if (stop.get() == 404) {
+							//error
+							convertedFileList.add("404");
+						} else if (stop.get() == 200) {
+							//success
+							if (null != list && !list.isEmpty()) {
+								for (String name : list) {						
 									convertedFileList.add(subPath + name);
 								}
+								Logger.d(getClass(), "convertedFileList  = " + convertedFileList.size());
+		
+							} else {
+								convertedFileList.add("404");
 							}
-							Logger.d(getClass(), "convertedFileList  = " + convertedFileList.size());
-	
-						} else {
-							convertedFileList.add(error);
 						}
 					}
-					
-					@Override
-					public void onError() {
-						
-					}
 				}, stop);
-
-		if (exitVal == 0) {
-			Logger.d(getClass(), "Command :: '" + findCmd + "' exe successed");
-		}
-		else {
-			Logger.d(getClass(), "Command : '" + findCmd + "' exe failed");
-		}
 		
 		int total = 0;
-		Logger.d(getClass(), "stop : " + stop.get());
-		while (stop.get() < 1) {
-			
+
+		while (stop.get() != 200 && stop.get() != 404) {
 			try {
-				Thread.sleep(100);
+				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			total++;
 			
-			if (total > 200)
+			if (total > 6000)
 				break;
 		}
+		
 		// 返回URIs
 		return convertedFileList;
 	}

@@ -81,7 +81,6 @@ public class ConvertUtils {
 		
 		int endIndex = filePath.lastIndexOf("/");
 		String uploadDirPath = filePath.substring(0, endIndex + 1);
-		// uploadDirPath： /usr/local/tomcat/webapps/ROOT/local/upload/admin/
 		
 		//TODO 取subpath
 		String[] strings = uploadDirPath.split("/");
